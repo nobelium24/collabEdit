@@ -12,6 +12,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu } from "lucide-react";
+import CreateDocumentModal from "./CreateDocument";
 
 interface User {
     name: string;
@@ -21,6 +22,7 @@ interface User {
 
 export const Navbar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [open, setOpen] = useState(false)
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -52,9 +54,10 @@ export const Navbar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => 
             </div>
 
             <div className="flex items-center gap-4">
-                <Button asChild>
-                    <Link href="/editor/new">New Document</Link>
-                </Button>
+                <div>
+                    <Button onClick={() => setOpen(true)}>New Document</Button>
+                    <CreateDocumentModal open={open} onOpenChange={setOpen} />
+                </div>
 
                 {user && (
                     <DropdownMenu>

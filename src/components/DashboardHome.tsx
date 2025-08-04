@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import CreateDocumentModal from "./CreateDocument";
 
 interface Document {
     id: string;
@@ -13,6 +14,7 @@ interface Document {
 export const DashboardHome = () => {
     const [user, setUser] = useState<{ name: string; image: string } | null>(null);
     const [documents, setDocuments] = useState<Document[]>([]);
+    const [open, setOpen] = useState(false)
 
     useEffect(() => {
         const stored = localStorage.getItem("collab_user");
@@ -28,6 +30,10 @@ export const DashboardHome = () => {
         ]);
     }, []);
 
+    const handleCreate = (title: string) => {
+
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -40,9 +46,10 @@ export const DashboardHome = () => {
             <div>
                 <div className="flex justify-between items-center mb-2">
                     <h2 className="text-lg font-medium">Recent Documents</h2>
-                    <Link href="/new">
-                        <Button size="sm">New Document</Button>
-                    </Link>
+                    <div>
+                        <Button onClick={() => setOpen(true)}>New Document</Button>
+                        <CreateDocumentModal open={open} onOpenChange={setOpen} />
+                    </div>
                 </div>
 
                 {documents.length === 0 ? (
