@@ -351,9 +351,70 @@ export class Requests {
         }
     }
 
-    // Helper method to update the access token
+    async createDocumentMetadata(params: {
+        documentId: string;
+        version?: number;
+        metadata?: Metadata;
+    }): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.post(
+                `${ROOT_URL}/document-metadata/create`,
+                params,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error creating document metadata:", error);
+            throw error;
+        }
+    }
+
+    async getDocumentMetadata(documentId: string): Promise<{
+        metadata: DocumentMetadata
+    }> {
+        try {
+            const response: AxiosResponse<{ metadata: DocumentMetadata }> = await axios.get(
+                `${ROOT_URL}/document-metadata/get-one?documentId=${documentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching document metadata:", error);
+            throw error;
+        }
+    }
+
+    async updateDocumentMetadata(
+        documentMetadataId: string,
+        updates: Partial<DocumentMetadata>
+    ): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.patch(
+                `${ROOT_URL}/document-metadata/update?documentMetadataId=${documentMetadataId}`,
+                updates,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error updating document metadata:", error);
+            throw error;
+        }
+    }
+
+    async deleteDocumentMetadata(documentMetadataId: string): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.delete(
+                `${ROOT_URL}/document-metadata/delete?documentMetadataId=${documentMetadataId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error deleting document metadata:", error);
+            throw error;
+        }
+    }
+
     setAccessToken(token: string) {
         this.accessToken = token;
     }
 }
-
