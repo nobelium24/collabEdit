@@ -1,6 +1,7 @@
 import {
     User, AuthResponse, Media, Document, DocumentAccess, DocumentMedia,
-    DocumentMetadata, Metadata, ForgotPassword, Invite, Role, InviteStatus
+    DocumentMetadata, Metadata, ForgotPassword, Invite, Role, InviteStatus,
+    LoginPayload
 } from "@/@types/types";
 import axios, { AxiosResponse } from "axios";
 import { ROOT_URL } from "@/constants/constants";
@@ -45,7 +46,7 @@ export class Requests {
         }
     }
 
-    async signIn(params: { email?: string, userName?: string, password: string }): Promise<AuthResponse> {
+    async signIn(params: LoginPayload): Promise<AuthResponse> {
         try {
             const response: AxiosResponse<AuthResponse> = await axios.post(`${ROOT_URL}/auth/login`, params);
             this.accessToken = response.data.accessToken; // Store the access token
@@ -156,8 +157,203 @@ export class Requests {
         }
     }
 
+    async createDocument(params: {
+        title: string;
+        content?: string;
+        isPublic?: boolean;
+    }): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.post(
+                `${ROOT_URL}/document/create`,
+                params,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error creating document:", error);
+            throw error;
+        }
+    }
+
+    async getUserCreatedDocuments(): Promise<{ documents: Document[] }> {
+        try {
+            const response: AxiosResponse<{ documents: Document[] }> = await axios.get(
+                `${ROOT_URL}/document/user-created-docs`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching user documents:", error);
+            throw error;
+        }
+    }
+
+    async getSingleDocument(documentId: string): Promise<{ document: Document }> {
+        try {
+            const response: AxiosResponse<{ document: Document }> = await axios.get(
+                `${ROOT_URL}/document/get-one?documentId=${documentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching document:", error);
+            throw error;
+        }
+    }
+
+    async toggleDocumentVisibility(documentId: string): Promise<void> {
+        try {
+            await axios.patch(
+                `${ROOT_URL}/document/toggle-visibility/${documentId}`,
+                {},
+                { headers: this.getAuthHeaders() }
+            );
+        } catch (error) {
+            console.log("Error toggling document visibility:", error);
+            throw error;
+        }
+    }
+
+    async deleteDocument(documentId: string): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.delete(
+                `${ROOT_URL}/document/delete/${documentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error deleting document:", error);
+            throw error;
+        }
+    }
+
+    async revokeAccess(documentAccessId: string): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.delete(
+                `${ROOT_URL}/document/revoke-access/${documentAccessId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error revoking access:", error);
+            throw error;
+        }
+    }
+
+    async modifyAccess(
+        documentAccessId: string,
+        newRole: Role
+    ): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.patch(
+                `${ROOT_URL}/document/modify-access/${documentAccessId}/${newRole}`,
+                {},
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error modifying access:", error);
+            throw error;
+        }
+    }
+
+    async fetchAllDocuments(): Promise<{ documents: Document[] }> {
+        try {
+            const response: AxiosResponse<{ documents: Document[] }> = await axios.get(
+                `${ROOT_URL}/document/all`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching all documents:", error);
+            throw error;
+        }
+    }
+
+    async fetchCollaborators(documentId: string): Promise<{ collaborators: DocumentAccess[] }> {
+        try {
+            const response: AxiosResponse<{ collaborators: DocumentAccess[] }> = await axios.get(
+                `${ROOT_URL}/document/collaborators/${documentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error fetching collaborators:", error);
+            throw error;
+        }
+    }
+
+    async transferOwnership(
+        documentId: string,
+        recipientId: string
+    ): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.patch(
+                `${ROOT_URL}/document/transfer-ownership/${documentId}/${recipientId}`,
+                {},
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error transferring ownership:", error);
+            throw error;
+        }
+    }
+
+    async inviteCollaborator(params: {
+        documentId: string;
+        email: string;
+        role: Role;
+    }): Promise<{ message: string }> {
+        try {
+            const response: AxiosResponse<{ message: string }> = await axios.post(
+                `${ROOT_URL}/document/invite-collaborator`,
+                params,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error inviting collaborator:", error);
+            throw error;
+        }
+    }
+
+    async generateDocPDF(documentId: string): Promise<{ documentLink: string }> {
+        try {
+            const response: AxiosResponse<{ documentLink: string }> = await axios.get(
+                `${ROOT_URL}/document/generate-pdf?documentId=${documentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error) {
+            console.log("Error generating PDF:", error);
+            throw error;
+        }
+    }
+
+    async acceptInvitation(token: string): Promise<{
+        message: string;
+        accessToken?: string;
+        refreshToken?: string;
+        redirectTo?: string;
+    }> {
+        try {
+            const response: AxiosResponse<{
+                message: string;
+                accessToken?: string;
+                refreshToken?: string;
+                redirectTo?: string;
+            }> = await axios.get(`${ROOT_URL}/invite/accept?token=${token}`);
+            return response.data;
+        } catch (error) {
+            console.log("Error accepting invitation:", error);
+            throw error;
+        }
+    }
+
     // Helper method to update the access token
     setAccessToken(token: string) {
         this.accessToken = token;
     }
 }
+

@@ -95,5 +95,11 @@ export type AuthResponse = {
     };
 };
 
+export type LoginPayload = {
+    email?: string,
+    userName?: string,
+    password: string
+}
+
 export type Role = "edit" | "read" | "creator";
 export type InviteStatus = "pending" | "accepted" | "declined";
