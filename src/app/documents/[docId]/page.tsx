@@ -90,7 +90,7 @@ export default function DocumentEditorPage() {
                             className="fixed inset-0 bg-black/30 md:hidden z-40"
                             onClick={() => setSidebarOpen(false)}
                         />
-                        <div className="fixed inset-y-0 left-0 w-90 bg-white z-50 shadow-lg border-r flex flex-col">
+                        <div className="fixed inset-y-0 left-0 w-full bg-white z-50 shadow-lg border-r flex flex-col">
                             <div className="flex justify-end p-3 border-b">
                                 <Button
                                     variant="ghost"
