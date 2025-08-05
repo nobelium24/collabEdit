@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { Requests } from "@/services/requests";
 
 export default function SignupPage() {
     const formik = useFormik({
@@ -35,7 +36,7 @@ export default function SignupPage() {
         }),
         onSubmit: (values) => {
             console.log(values);
-            // Handle API submission here
+
         },
     });
 

@@ -92,6 +92,7 @@ export type AuthResponse = {
     user: {
         email: string;
         name: string;
+        profilePhoto: string;
     };
 };
 

@@ -20,7 +20,6 @@ export default function DashboardPage() {
 
             <div className="flex flex-1 relative">
                 <Sidebar visible={isSidebarOpen} />
-                {/* Overlay for mobile sidebar */}
                 {isSidebarOpen && (
                     <div
                         className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
