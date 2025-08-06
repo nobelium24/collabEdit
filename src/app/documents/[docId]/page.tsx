@@ -42,7 +42,6 @@ export default function DocumentEditorPage() {
 
     return (
         <div className="fixed inset-0 flex flex-col bg-gray-50 overflow-hidden">
-            {/* Top Header */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b bg-white z-10">
                 <button
                     onClick={() => router.back()}
@@ -58,7 +57,6 @@ export default function DocumentEditorPage() {
                     className="text-lg sm:text-2xl font-semibold border-none shadow-none focus-visible:ring-0 focus-visible:outline-none px-2 sm:px-0 bg-transparent w-full max-w-3xl text-center mx-2"
                 />
 
-                {/* Mobile sidebar toggle */}
                 <Button
                     variant="outline"
                     size="sm"
@@ -69,21 +67,17 @@ export default function DocumentEditorPage() {
                 </Button>
             </div>
 
-            {/* Main Editor Layout */}
             <div className="flex flex-1 overflow-hidden relative">
-                {/* Desktop Sidebar (always visible) */}
                 <div className="hidden md:block h-full border-r bg-white">
                     <DocumentSidebar docId={safeDocId} />
                 </div>
 
-                {/* Editor Content */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 h-full">
                         <EditorContent editor={editor} />
                     </div>
                 </div>
 
-                {/* Mobile Sidebar (overlay) */}
                 {sidebarOpen && (
                     <>
                         <div

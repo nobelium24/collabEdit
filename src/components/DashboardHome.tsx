@@ -17,7 +17,7 @@ export const DashboardHome = () => {
     const [open, setOpen] = useState(false)
 
     useEffect(() => {
-        const stored = localStorage.getItem("collab_user");
+        const stored = localStorage.getItem("user");
         if (stored) {
             setUser(JSON.parse(stored));
         }
@@ -29,10 +29,6 @@ export const DashboardHome = () => {
             { id: "3", title: "Design Sprint Plan", createdAt: "2025-07-25" },
         ]);
     }, []);
-
-    const handleCreate = (title: string) => {
-
-    };
 
     return (
         <div className="space-y-6">

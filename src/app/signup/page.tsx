@@ -8,8 +8,14 @@ import Link from "next/link";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Requests } from "@/services/requests";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+    const request = new Requests();
+    const { signUp } = request;
+    const router = useRouter();
+
     const formik = useFormik({
         initialValues: {
             firstName: "",
@@ -34,9 +40,17 @@ export default function SignupPage() {
                 .oneOf([Yup.ref("password")], "Passwords must match")
                 .required("Please confirm your password"),
         }),
-        onSubmit: (values) => {
+        onSubmit: async (values) => {
             console.log(values);
-
+            try {
+                const response = await signUp(values);
+                console.log("Signup successful:", response);
+                toast.success("Signup successful! ");
+                router.push("/login");
+            } catch (error) {
+                console.error("Signup failed:", error);
+                toast.error("Signup failed. Please try again.");
+            }
         },
     });
 

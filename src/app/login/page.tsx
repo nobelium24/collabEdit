@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Requests } from "@/services/requests";
+import { AuthService } from "@/services/auth";
 
 const validationSchema = Yup.object({
     email: Yup.string()
@@ -18,15 +22,32 @@ const validationSchema = Yup.object({
 });
 
 export default function LoginPage() {
+    const request = new Requests();
+    const auth = new AuthService()
+    const { signIn } = request;
+    const { setSecureTokens, setUserData } = auth
+    const router = useRouter();
+
     const formik = useFormik({
         initialValues: {
             email: "",
             password: "",
         },
         validationSchema,
-        onSubmit: (values) => {
-            console.log("Login values:", values);
-            // Send login request here
+        onSubmit: async (values) => {
+            try {
+                const response = await signIn(values);
+                setSecureTokens(response)
+                setUserData({ user: response.user })
+                toast.success(`Welcome ${response.user.name}`);
+                const redirectPath = "/dashboard";
+                router.push(redirectPath, {
+                    scroll: false
+                });
+            } catch (error) {
+                console.error("Login failed:", error);
+                toast.error("Login failed. Please try again.");
+            }
         },
     });
 
