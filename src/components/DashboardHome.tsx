@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import CreateDocumentModal from "./CreateDocument";
+import { AuthService } from "@/services/auth";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Requests } from "@/services/requests";
 
 interface Document {
     id: string;
@@ -15,20 +19,51 @@ export const DashboardHome = () => {
     const [user, setUser] = useState<{ name: string; image: string } | null>(null);
     const [documents, setDocuments] = useState<Document[]>([]);
     const [open, setOpen] = useState(false)
+    const router = useRouter();
+    const request = new Requests();
 
+    const { getUserCreatedDocuments } = request;
+
+    async function checkAuth() {
+        try {
+            const isAuthenticated = await AuthService.requireAuth("/login");
+            if (!isAuthenticated) {
+                router.push("/login");
+            }
+        } catch (error) {
+            console.error("Authentication check failed:", error);
+            toast.error("Authentication failed. Please log in again.");
+            AuthService.clearAuthData();
+            setUser(null);
+            setDocuments([]);
+            router.push("/login");
+        }
+    }
     useEffect(() => {
+        checkAuth();
         const stored = localStorage.getItem("user");
         if (stored) {
             setUser(JSON.parse(stored));
         }
-
-        // Simulated data for now — replace with real API call later
-        setDocuments([
-            { id: "1", title: "Team Meeting Notes", createdAt: "2025-08-01" },
-            { id: "2", title: "Product Roadmap", createdAt: "2025-07-27" },
-            { id: "3", title: "Design Sprint Plan", createdAt: "2025-07-25" },
-        ]);
     }, []);
+
+    async function handleGetUserDocuments() {
+        try {
+            const documents = await getUserCreatedDocuments();
+            const normalizedDocs = (documents.documents || []).map(doc => ({
+                ...doc,
+                createdAt: typeof doc.createdAt === "string"
+                    ? doc.createdAt
+                    : doc.createdAt.toISOString(),
+            }));
+            setDocuments(normalizedDocs);
+        } catch (error) {
+            console.error("Failed to fetch documents:", error);
+            toast.error("Failed to load documents. Please try again later.");
+        }
+    }
+
+
 
     return (
         <div className="space-y-6">
@@ -68,14 +103,15 @@ export const DashboardHome = () => {
                 )}
             </div>
 
-            {/* Floating New Doc Button on small screens */}
             <Link href="/new">
                 <Button
                     className="fixed bottom-6 right-6 rounded-full shadow-lg md:hidden"
                     size="icon"
+                    onClick={() => setOpen(true)}
                 >
                     ➕
                 </Button>
+                <CreateDocumentModal open={open} onOpenChange={setOpen} />
             </Link>
         </div>
     );

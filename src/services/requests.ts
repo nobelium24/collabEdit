@@ -10,52 +10,113 @@ export class Requests {
     private accessToken: string | null = null;
 
     constructor(accessToken?: string) {
-        if (accessToken) {
-            this.accessToken = accessToken;
+        this.accessToken = accessToken || this.getStoredAccessToken();
+        this.signIn = this.signIn.bind(this);
+        this.completeAccount = this.completeAccount.bind(this);
+        this.generateAccessToken = this.generateAccessToken.bind(this);
+        this.forgotPassword = this.forgotPassword.bind(this);
+        
+    }
+
+    private getStoredAccessToken(): string | null {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('accessToken');
+        }
+        return null;
+    }
+
+    private updateStoredAccessToken(token: string): void {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('accessToken', token);
         }
     }
 
+    private updateRefreshToken(token: string): void {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('refreshToken', token);
+        }
+    }
+
+    private setUserData(userDetails: Partial<AuthResponse>) {
+        sessionStorage.setItem("user", JSON.stringify(userDetails));
+    }
+
     private getAuthHeaders() {
-        if (!this.accessToken) {
+        const token = this.accessToken || this.getStoredAccessToken();
+        if (!token) {
             throw new Error("Access token is required for authenticated requests");
         }
         return {
-            'Authorization': `Bearer ${this.accessToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         };
     }
 
     private getMultipartAuthHeaders() {
-        if (!this.accessToken) {
+        const token = this.accessToken || this.getStoredAccessToken();
+        if (!token) {
             throw new Error("Access token is required for authenticated requests");
         }
         return {
-            'Authorization': `Bearer ${this.accessToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         };
     }
 
-    // Auth endpoints (public)
-    async signUp(params: Partial<User>): Promise<User> {
-        try {
-            const response: AxiosResponse<User> = await axios.post(`${ROOT_URL}/auth/register`, params);
-            return response.data;
-        } catch (error) {
-            console.log("Error in signUp:", error);
-            throw error;
-        }
-    }
-
     async signIn(params: LoginPayload): Promise<AuthResponse> {
         try {
-            const response: AxiosResponse<AuthResponse> = await axios.post(`${ROOT_URL}/auth/login`, params);
-            this.accessToken = response.data.accessToken; // Store the access token
+            const response: AxiosResponse<AuthResponse> = await axios.post(`${ROOT_URL}/auth/login`, params)
+            this.accessToken = response.data.accessToken;
+            this.updateStoredAccessToken(response.data.accessToken);
+            this.updateRefreshToken(response.data.refreshToken);
+            this.setUserData({ user: response.data.user });
             return response.data;
         } catch (error) {
             console.log("Error in signIn:", error);
             throw error;
         }
     }
+
+    async completeAccount(
+        userId: string,
+        documentId: string,
+        params: { firstName: string, lastName: string, password: string }
+    ): Promise<{
+        message: string,
+        accessToken: string,
+        refreshToken: string,
+        redirectTo: string
+    }> {
+        try {
+            const response = await axios.post(`${ROOT_URL}/auth/complete-account?documentId=${documentId}`, params, {
+                headers: { 'user-id': userId }
+            });
+            this.accessToken = response.data.accessToken;
+            this.updateStoredAccessToken(response.data.accessToken);
+            return response.data;
+        } catch (error) {
+            console.log("Error in completeAccount:", error);
+            throw error;
+        }
+    }
+
+    async generateAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+        try {
+            const response = await axios.post(`${ROOT_URL}/auth/access-token`, { refreshToken });
+            this.accessToken = response.data.accessToken;
+            this.updateStoredAccessToken(response.data.accessToken);
+            return response.data;
+        } catch (error) {
+            console.log("Error in generateAccessToken:", error);
+            throw error;
+        }
+    }
+
+    setAccessToken(token: string) {
+        this.accessToken = token;
+        this.updateStoredAccessToken(token);
+    }
+
 
     async forgotPassword(email: string): Promise<void> {
         try {
@@ -76,45 +137,6 @@ export class Requests {
         }
     }
 
-    async generateAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
-        try {
-            const response: AxiosResponse<{ accessToken: string }> = await axios.post(`${ROOT_URL}/auth/access-token`, { refreshToken });
-            this.accessToken = response.data.accessToken; // Store the new access token
-            return response.data;
-        } catch (error) {
-            console.log("Error in generateAccessToken:", error);
-            throw error;
-        }
-    }
-
-    async completeAccount(
-        userId: string,
-        documentId: string,
-        params: { firstName: string, lastName: string, password: string }
-    ): Promise<{
-        message: string,
-        accessToken: string,
-        refreshToken: string,
-        redirectTo: string
-    }> {
-        try {
-            const response: AxiosResponse<{
-                message: string,
-                accessToken: string,
-                refreshToken: string,
-                redirectTo: string
-            }> = await axios.post(`${ROOT_URL}/auth/complete-account?documentId=${documentId}`, params, {
-                headers: { 'user-id': userId }
-            });
-            this.accessToken = response.data.accessToken; // Store the access token
-            return response.data;
-        } catch (error) {
-            console.log("Error in completeAccount:", error);
-            throw error;
-        }
-    }
-
-    // Protected endpoints (require JWT)
     async resetPassword(newPassword: string): Promise<void> {
         try {
             await axios.post(`${ROOT_URL}/auth/reset-password`,
@@ -414,7 +436,4 @@ export class Requests {
         }
     }
 
-    setAccessToken(token: string) {
-        this.accessToken = token;
-    }
 }

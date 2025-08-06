@@ -10,7 +10,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Requests } from "@/services/requests";
-import { AuthService } from "@/services/auth";
 
 const validationSchema = Yup.object({
     email: Yup.string()
@@ -23,9 +22,8 @@ const validationSchema = Yup.object({
 
 export default function LoginPage() {
     const request = new Requests();
-    const auth = new AuthService()
+
     const { signIn } = request;
-    const { setSecureTokens, setUserData } = auth
     const router = useRouter();
 
     const formik = useFormik({
@@ -37,8 +35,7 @@ export default function LoginPage() {
         onSubmit: async (values) => {
             try {
                 const response = await signIn(values);
-                setSecureTokens(response)
-                setUserData({ user: response.user })
+
                 toast.success(`Welcome ${response.user.name}`);
                 const redirectPath = "/dashboard";
                 router.push(redirectPath, {
