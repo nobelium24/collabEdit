@@ -63,7 +63,16 @@ export class Requests {
         };
     }
 
-    
+        async signUp(params: Partial<User>): Promise<User> {
+        try {
+            const response: AxiosResponse<User> = await axios.post(`${ROOT_URL}/auth/register`, params);
+            return response.data;
+        } catch (error) {
+            console.log("Error in signUp:", error);
+            throw error;
+        }
+    }
+
 
     async signIn(params: LoginPayload): Promise<AuthResponse> {
         try {
