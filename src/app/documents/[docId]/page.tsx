@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import DocumentSidebar from "@/components/DocumentSideBar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { Requests } from "@/services/requests";
+import { toast } from "sonner";
+import { Document } from "@/@types/types";
 
 //TODO: Implement fetch one document logic
 export default function DocumentEditorPage() {
@@ -19,6 +22,8 @@ export default function DocumentEditorPage() {
     const [content, setContent] = useState<string>("");
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const router = useRouter();
+    const [requests, setRequests] = useState<Requests | null>(null);
+    const [Document, setDocument] = useState<Document | null>(null);
 
     const editor = useEditor({
         extensions: [
@@ -40,6 +45,40 @@ export default function DocumentEditorPage() {
             // Optionally save the content
         },
     });
+
+    useEffect(() => {
+        const token = typeof window !== "undefined" ? localStorage.getItem('authToken') || '' : '';
+        setRequests(new Requests(token));
+    }, []);
+
+    const fetchDocument = async () => {
+        if (!requests) return;
+        try {
+            const { document } = await requests.getSingleDocument(safeDocId);
+            if (document) {
+                setDocument(document);
+                setTitle(document.title);
+                setContent(document.content || "");
+                editor?.commands.setContent(document.content || "");
+            } else {
+                toast.error("Document not found.");
+                router.push("/dashboard");
+            }
+        } catch (error) {
+            console.error("Error fetching document:", error);
+            toast.error("Failed to load document.");
+
+        }
+    }
+
+    useEffect(() => {
+        if (safeDocId) {
+            fetchDocument();
+        } else {
+            toast.error("Invalid document ID.");
+            router.push("/dashboard");
+        }
+    }, [safeDocId, requests]);
 
     return (
         <div className="fixed inset-0 flex flex-col bg-gray-50 overflow-hidden">

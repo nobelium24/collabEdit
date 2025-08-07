@@ -15,31 +15,39 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Initialize requests with auth token
-    const requests = new Requests(localStorage.getItem('authToken') || '')
-
-    const loadCollaborators = async () => {
-        setIsLoading(true)
-        try {
-            const { collaborators } = await requests.fetchCollaborators(docId)
-            setCollaborators(collaborators)
-            setError(null)
-        } catch (err) {
-            setError('Failed to load collaborators')
-            console.error(err)
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    const [requests, setRequests] = useState<Requests | null>(null);
 
     useEffect(() => {
-        loadCollaborators()
-    }, [docId])
+        const token = typeof window !== "undefined" ? localStorage.getItem('authToken') || '' : '';
+        setRequests(new Requests(token));
+    }, []);
+
+    const loadCollaborators = async () => {
+        if (!requests) return;
+        setIsLoading(true);
+        try {
+            const { collaborators } = await requests.fetchCollaborators(docId);
+            setCollaborators(collaborators);
+            setError(null);
+        } catch (err) {
+            setError('Failed to load collaborators');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (requests) {
+            loadCollaborators();
+        }
+    }, [docId, requests]);
 
     const handleInvite = async () => {
         if (!email) return
 
         setIsLoading(true)
+        if (!requests) return;
         try {
             await requests.inviteCollaborator({
                 documentId: docId,
@@ -57,6 +65,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     }
 
     const handleRoleChange = async (accessId: string, newRole: Role) => {
+        if (!requests) return;
         setIsLoading(true)
         try {
             await requests.modifyAccess(accessId, newRole)
@@ -70,6 +79,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     }
 
     const handleRemove = async (accessId: string) => {
+        if (!requests) return;
         setIsLoading(true)
         try {
             await requests.revokeAccess(accessId)
@@ -83,6 +93,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     }
 
     const handleTransfer = async (userId: string) => {
+        if (!requests) return;
         setIsLoading(true)
         try {
             await requests.transferOwnership(docId, userId)
