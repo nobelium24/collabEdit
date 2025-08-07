@@ -11,11 +11,33 @@ export class Requests {
 
     constructor(accessToken?: string) {
         this.accessToken = accessToken || this.getStoredAccessToken();
+        this.signUp = this.signUp.bind(this);
         this.signIn = this.signIn.bind(this);
         this.completeAccount = this.completeAccount.bind(this);
         this.generateAccessToken = this.generateAccessToken.bind(this);
+        this.setAccessToken = this.setAccessToken.bind(this);
         this.forgotPassword = this.forgotPassword.bind(this);
-        
+        this.verifyResetCode = this.verifyResetCode.bind(this);
+        this.resetPassword = this.resetPassword.bind(this);
+        this.getProfile = this.getProfile.bind(this);
+        this.uploadProfilePicture = this.uploadProfilePicture.bind(this);
+        this.createDocument = this.createDocument.bind(this);
+        this.getUserCreatedDocuments = this.getUserCreatedDocuments.bind(this);
+        this.getSingleDocument = this.getSingleDocument.bind(this);
+        this.toggleDocumentVisibility = this.toggleDocumentVisibility.bind(this);
+        this.deleteDocument = this.deleteDocument.bind(this);
+        this.revokeAccess = this.revokeAccess.bind(this);
+        this.modifyAccess = this.modifyAccess.bind(this);
+        this.fetchAllDocuments = this.fetchAllDocuments.bind(this);
+        this.fetchCollaborators = this.fetchCollaborators.bind(this);
+        this.transferOwnership = this.transferOwnership.bind(this);
+        this.inviteCollaborator = this.inviteCollaborator.bind(this);
+        this.generateDocPDF = this.generateDocPDF.bind(this);
+        this.acceptInvitation = this.acceptInvitation.bind(this);
+        this.createDocumentMetadata = this.createDocumentMetadata.bind(this);
+        this.getDocumentMetadata = this.getDocumentMetadata.bind(this);
+        this.updateDocumentMetadata = this.updateDocumentMetadata.bind(this);
+        this.deleteDocumentMetadata = this.deleteDocumentMetadata.bind(this);
     }
 
     private getStoredAccessToken(): string | null {
@@ -63,7 +85,7 @@ export class Requests {
         };
     }
 
-        async signUp(params: Partial<User>): Promise<User> {
+    async signUp(params: Partial<User>): Promise<User> {
         try {
             const response: AxiosResponse<User> = await axios.post(`${ROOT_URL}/auth/register`, params);
             return response.data;

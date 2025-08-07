@@ -10,6 +10,7 @@ import DocumentSidebar from "@/components/DocumentSideBar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
+//TODO: Implement fetch one document logic
 export default function DocumentEditorPage() {
     const { docId } = useParams();
     const safeDocId = Array.isArray(docId) ? docId[0] ?? "" : docId ?? "";

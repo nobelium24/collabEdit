@@ -41,7 +41,7 @@ export const DashboardHome = () => {
     }
     useEffect(() => {
         checkAuth();
-        const stored = localStorage.getItem("user");
+        const stored = sessionStorage.getItem("user");
         if (stored) {
             setUser(JSON.parse(stored));
         }
@@ -50,6 +50,7 @@ export const DashboardHome = () => {
     async function handleGetUserDocuments() {
         try {
             const documents = await getUserCreatedDocuments();
+            console.log("Fetched documents:", documents);
             const normalizedDocs = (documents.documents || []).map(doc => ({
                 ...doc,
                 createdAt: typeof doc.createdAt === "string"
@@ -57,11 +58,17 @@ export const DashboardHome = () => {
                     : doc.createdAt.toISOString(),
             }));
             setDocuments(normalizedDocs);
+            console.log("Documents set:", normalizedDocs);
         } catch (error) {
             console.error("Failed to fetch documents:", error);
             toast.error("Failed to load documents. Please try again later.");
         }
     }
+    useEffect(() => {
+        if (user) {
+            handleGetUserDocuments();
+        }
+    }, [user]);
 
 
 
@@ -103,7 +110,7 @@ export const DashboardHome = () => {
                 )}
             </div>
 
-            <Link href="/new">
+            <div>
                 <Button
                     className="fixed bottom-6 right-6 rounded-full shadow-lg md:hidden"
                     size="icon"
@@ -112,7 +119,7 @@ export const DashboardHome = () => {
                     ➕
                 </Button>
                 <CreateDocumentModal open={open} onOpenChange={setOpen} />
-            </Link>
+            </div>
         </div>
     );
 };

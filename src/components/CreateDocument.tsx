@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
+import { toast } from "sonner";
+import { Requests } from "@/services/requests";
 
 interface CreateDocumentModalProps {
     open: boolean
@@ -12,12 +14,26 @@ interface CreateDocumentModalProps {
 
 export default function CreateDocumentModal({ open, onOpenChange, }: CreateDocumentModalProps) {
     const [title, setTitle] = useState("")
+    const request = new Requests();
+    const { createDocument } = request;
 
-    const handleCreate = () => {
-        if (!title.trim()) return
+    const handleCreate = async () => {
+        if (!title.trim()) {
+            toast.error("Document title cannot be empty.");
+            return;
+        }
 
-        setTitle("")
-        onOpenChange(false)
+        try {
+            const response = await createDocument({ title });
+            toast.success("Document created successfully.");
+            setTitle("");
+            onOpenChange(false);
+            window.location.reload();
+
+        } catch (error) {
+            console.error("Error creating document:", error);
+            toast.error("An error occurred while creating the document.");
+        }
     }
 
     return (
