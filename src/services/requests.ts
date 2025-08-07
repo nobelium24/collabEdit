@@ -63,6 +63,8 @@ export class Requests {
         };
     }
 
+    
+
     async signIn(params: LoginPayload): Promise<AuthResponse> {
         try {
             const response: AxiosResponse<AuthResponse> = await axios.post(`${ROOT_URL}/auth/login`, params)
