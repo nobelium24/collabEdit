@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Requests } from "@/services/requests";
 import { toast } from "sonner";
-import { Document } from "@/@types/types";
+import { Document, DocumentContent, DocumentJSON } from "@/@types/types";
+import { useDocumentWebSocket } from "@/hooks/useDocumentWebSocket";
 
 //TODO: Implement fetch one document logic
 export default function DocumentEditorPage() {
@@ -19,11 +20,29 @@ export default function DocumentEditorPage() {
     const safeDocId = Array.isArray(docId) ? docId[0] ?? "" : docId ?? "";
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState("");
-    const [content, setContent] = useState<string>("");
+    const [content, setContent] = useState<DocumentJSON>({
+        type: "doc",
+        content: [],
+    } as DocumentJSON
+    );
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const router = useRouter();
     const [requests, setRequests] = useState<Requests | null>(null);
     const [Document, setDocument] = useState<Document | null>(null);
+
+    const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
+        setDocument(updatedDoc);
+        setTitle(updatedDoc.title);
+        setContent(updatedDoc.content || {
+            type: "doc",
+            content: [],
+        } as DocumentJSON
+        );
+        editor?.commands.setContent(updatedDoc.content || "");
+        toast.info("Document updated in real-time");
+    }, []);
+
+    const { emitEdit } = useDocumentWebSocket(safeDocId, handleDocumentUpdate);
 
     const editor = useEditor({
         extensions: [
@@ -42,7 +61,10 @@ export default function DocumentEditorPage() {
         immediatelyRender: false,
         onUpdate({ editor }) {
             const json = editor.getJSON();
-            // Optionally save the content
+            emitEdit({
+                content: json,
+                updatedAt: new Date(),
+            });
         },
     });
 
@@ -58,7 +80,10 @@ export default function DocumentEditorPage() {
             if (document) {
                 setDocument(document);
                 setTitle(document.title);
-                setContent(document.content || "");
+                setContent(document.content || {
+                    type: "doc",
+                    content: [],
+                } as DocumentJSON);
                 editor?.commands.setContent(document.content || "");
             } else {
                 toast.error("Document not found.");
@@ -67,9 +92,10 @@ export default function DocumentEditorPage() {
         } catch (error) {
             console.error("Error fetching document:", error);
             toast.error("Failed to load document.");
-
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
         if (safeDocId) {
@@ -79,6 +105,21 @@ export default function DocumentEditorPage() {
             router.push("/dashboard");
         }
     }, [safeDocId, requests]);
+
+    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTitle = e.target.value;
+        setTitle(newTitle);
+        if (document) {
+            emitEdit({
+                title: newTitle,
+                updatedAt: new Date(),
+            });
+        }
+    };
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    }
 
     return (
         <div className="fixed inset-0 flex flex-col bg-gray-50 overflow-hidden">
@@ -92,7 +133,7 @@ export default function DocumentEditorPage() {
 
                 <Input
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={handleTitleChange}
                     placeholder="Document title..."
                     className="text-lg sm:text-2xl font-semibold border-none shadow-none focus-visible:ring-0 focus-visible:outline-none px-2 sm:px-0 bg-transparent w-full max-w-3xl text-center mx-2"
                 />

@@ -14,10 +14,28 @@ export type Media = {
     secure_url: string
 }
 
+export type DocumentContent = {
+    type: string;
+    content?: DocumentContent[];
+    text?: string;
+    //TODO: Add other Tiptap/ProseMirror node properties once you find out about them. We might get rid of the documentMetadata table self...
+    attrs?: Record<string, any>;
+    marks?: Array<{
+        type: string;
+        attrs?: Record<string, any>;
+    }>;
+};
+
+export type DocumentJSON = {
+    type: string;
+    content: DocumentContent[];
+};
+
+
 export type Document = {
     id: string;
     title: string;
-    content?: string;
+    content?: DocumentJSON;
     userId: string;
     isPublic: boolean;
     createdAt: Date;
