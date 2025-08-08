@@ -30,7 +30,7 @@ export const Navbar = ({
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
-        const storedUser = sessionStorage.getItem("user");
+        const storedUser = localStorage.getItem("user");
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
             setUser({
@@ -42,7 +42,7 @@ export const Navbar = ({
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        sessionStorage.removeItem("user");
+        localStorage.removeItem("user");
         localStorage.removeItem("refreshToken");
         window.location.href = "/login";
     };

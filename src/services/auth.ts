@@ -9,20 +9,20 @@ export class AuthService {
 
     static setSecureTokens(response: AuthResponse): void {
         if (typeof window !== "undefined") {
-            sessionStorage.setItem(this.ACCESS_TOKEN_KEY, response.accessToken);
+            localStorage.setItem(this.ACCESS_TOKEN_KEY, response.accessToken);
             localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken);
         }
     }
 
     static setUserData(userDetails: Partial<AuthResponse>): void {
         if (typeof window !== "undefined") {
-            sessionStorage.setItem(this.USER_DATA_KEY, JSON.stringify(userDetails));
+            localStorage.setItem(this.USER_DATA_KEY, JSON.stringify(userDetails));
         }
     }
 
     static getAccessToken(): string | null {
         if (typeof window !== "undefined") {
-            return sessionStorage.getItem(this.ACCESS_TOKEN_KEY);
+            return localStorage.getItem(this.ACCESS_TOKEN_KEY);
         }
         return null;
     }
@@ -36,7 +36,7 @@ export class AuthService {
 
     static getUserData(): Partial<AuthResponse> | null {
         if (typeof window !== "undefined") {
-            const userData = sessionStorage.getItem(this.USER_DATA_KEY);
+            const userData = localStorage.getItem(this.USER_DATA_KEY);
             return userData ? JSON.parse(userData) : null;
         }
         return null;
@@ -44,9 +44,9 @@ export class AuthService {
 
     static clearAuthData(): void {
         if (typeof window !== "undefined") {
-            sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
+            localStorage.removeItem(this.ACCESS_TOKEN_KEY);
             localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-            sessionStorage.removeItem(this.USER_DATA_KEY);
+            localStorage.removeItem(this.USER_DATA_KEY);
         }
     }
 
@@ -60,7 +60,7 @@ export class AuthService {
                 try {
                     const requests = new Requests();
                     const { accessToken: newToken } = await requests.generateAccessToken(refreshToken);
-                    sessionStorage.setItem(this.ACCESS_TOKEN_KEY, newToken);
+                    localStorage.setItem(this.ACCESS_TOKEN_KEY, newToken);
                     return true;
                 } catch (err) {
                     console.error("Token refresh failed:", err);
@@ -89,7 +89,7 @@ export class AuthService {
             try {
                 const requests = new Requests();
                 const { accessToken: newToken } = await requests.generateAccessToken(refreshToken);
-                sessionStorage.setItem(this.ACCESS_TOKEN_KEY, newToken);
+                localStorage.setItem(this.ACCESS_TOKEN_KEY, newToken);
                 return true;
             } catch (err) {
                 console.error("Silent re-auth failed:", err);

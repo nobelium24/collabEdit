@@ -60,7 +60,7 @@ export class Requests {
     }
 
     private setUserData(userDetails: Partial<AuthResponse>) {
-        sessionStorage.setItem("user", JSON.stringify(userDetails));
+        localStorage.setItem("user", JSON.stringify(userDetails));
     }
 
     private getAuthHeaders() {

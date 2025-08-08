@@ -98,12 +98,13 @@ export default function DocumentEditorPage() {
     };
 
     useEffect(() => {
-        if (safeDocId) {
-            fetchDocument();
-        } else {
-            toast.error("Invalid document ID.");
-            router.push("/dashboard");
-        }
+        // if (safeDocId) {
+        //     fetchDocument();
+        // } else {
+        //     toast.error("Invalid document ID.");
+        //     router.push("/dashboard");
+        // }
+        fetchDocument();
     }, [safeDocId, requests]);
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +133,7 @@ export default function DocumentEditorPage() {
                 </button>
 
                 <Input
-                    value={title}
+                    value={title ?? ""}
                     onChange={handleTitleChange}
                     placeholder="Document title..."
                     className="text-lg sm:text-2xl font-semibold border-none shadow-none focus-visible:ring-0 focus-visible:outline-none px-2 sm:px-0 bg-transparent w-full max-w-3xl text-center mx-2"

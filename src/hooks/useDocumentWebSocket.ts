@@ -1,22 +1,37 @@
-// hooks/useDocumentWebSocket.ts
 import { useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
+// For socket.io-client v2.x, use require or import as namespace
+import * as io from "socket.io-client";
 import { Document } from "@/@types/types";
 import { toast } from "sonner";
+import { ROOT_URL } from "@/constants/constants";
 
 export const useDocumentWebSocket = (
     docId: string,
     onDocumentUpdate: (document: Document) => void
 ) => {
-    const socketRef = useRef<Socket | null>(null);
+    // v2.x type
+    const socketRef = useRef<SocketIOClient.Socket | null>(null);
+
+    console.log(docId)
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken") || "";
-        const socket = io(`${process.env.NEXT_PUBLIC_WS_URL}`, {
-            extraHeaders: {
-                Authorization: `Bearer ${token}`,
+        console.log(token)
+        // @ts-ignore
+        const socket = io(`${ROOT_URL}/ws`, {
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                }
             },
-            transports: ["websocket"],
+            transports: ["websocket", "polling"], 
+            forceNew: true,
+            reconnectionAttempts: 5,
+            query: {
+                token: token
+            }
         });
 
         socketRef.current = socket;
@@ -30,8 +45,8 @@ export const useDocumentWebSocket = (
             onDocumentUpdate(updatedDoc);
         });
 
-        socket.on("error", (error: Error) => {
-            toast.error("WebSocket error: " + error.message);
+        socket.on("error", (error: any) => {
+            toast.error("WebSocket error: " + (error?.message || error));
         });
 
         socket.on("disconnect", () => {
@@ -44,7 +59,7 @@ export const useDocumentWebSocket = (
     }, [docId]);
 
     const emitEdit = (document: Partial<Document>) => {
-        if (socketRef.current?.connected) {
+        if (socketRef.current && socketRef.current.connected) {
             socketRef.current.emit("edit", {
                 ...document,
                 id: docId,

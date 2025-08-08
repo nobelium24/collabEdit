@@ -41,7 +41,7 @@ export const DashboardHome = () => {
     }
     useEffect(() => {
         checkAuth();
-        const stored = sessionStorage.getItem("user");
+        const stored = localStorage.getItem("user");
         if (stored) {
             setUser(JSON.parse(stored));
         }
