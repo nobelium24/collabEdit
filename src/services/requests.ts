@@ -312,6 +312,94 @@ export class Requests {
         }
     }
 
+    async verifyInviteToken(token: string): Promise<{
+        documentTitle: string;
+        role: string;
+        email: string;
+        isValid: boolean;
+    }> {
+        try {
+            const response = await axios.get(
+                `${ROOT_URL}/invite/verify?token=${token}`
+            );
+            return {
+                ...response.data,
+                isValid: true
+            };
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 404) {
+                return {
+                    documentTitle: '',
+                    role: '',
+                    email: '',
+                    isValid: false
+                };
+            }
+            throw error;
+        }
+    }
+
+    async acceptInvite(token: string): Promise<{
+        message: string;
+        accessToken?: string;
+        refreshToken?: string;
+        redirectTo?: string;
+    }> {
+        try {
+            // Note: No auth headers needed since this is public endpoint
+            const response = await axios.post(
+                `${ROOT_URL}/invite/accept/${token}`,
+                {}, // Empty body since token is in URL
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            // Handle both cases (existing user and new user)
+            const result: {
+                message: string;
+                accessToken?: string;
+                refreshToken?: string;
+                redirectTo?: string;
+            } = response.data;
+
+            if (result.accessToken && result.refreshToken) {
+                // Existing user case - has tokens
+                return {
+                    message: result.message,
+                    accessToken: result.accessToken,
+                    refreshToken: result.refreshToken,
+                    redirectTo: result.redirectTo || '/dashboard'
+                };
+            } else {
+                // New user case - needs to complete registration
+                return {
+                    message: result.message,
+                    redirectTo: result.redirectTo || '/complete-registration'
+                };
+            }
+        } catch (error) {
+            console.error("Error accepting invite:", error);
+
+            // Handle specific error cases
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 404) {
+                    throw new Error("Invitation not found");
+                }
+                if (error.response?.status === 409) {
+                    throw new Error("Invite already accepted");
+                }
+                if (error.response?.data?.error) {
+                    throw new Error(error.response.data.error);
+                }
+            }
+
+            throw new Error("Failed to accept invitation");
+        }
+    }
+
     async fetchAllDocuments(): Promise<{ documents: Document[] }> {
         try {
             const response: AxiosResponse<{ documents: Document[] }> = await axios.get(

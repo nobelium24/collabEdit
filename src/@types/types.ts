@@ -63,6 +63,11 @@ export type DocumentMedia = {
     updatedAt: Date;
 };
 
+export type DocumentActionPanelProps = {
+    docId: string;
+};
+
+
 export type DocumentMetadata = {
     id: string;
     documentId: string;
