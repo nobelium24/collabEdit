@@ -8,6 +8,7 @@ import { AuthService } from "@/services/auth";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Requests } from "@/services/requests";
+import { AxiosError } from "axios";
 
 interface Document {
     id: string;
@@ -60,8 +61,18 @@ export const DashboardHome = () => {
             setDocuments(normalizedDocs);
             console.log("Documents set:", normalizedDocs);
         } catch (error) {
-            console.error("Failed to fetch documents:", error);
-            toast.error("Failed to load documents. Please try again later.");
+            const axiosError = error as AxiosError;
+            console.error("Error fetching user documents:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to load documents"
+                );
+            } else {
+                toast.error("Failed to load documents");
+            }
         }
     }
     useEffect(() => {

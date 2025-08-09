@@ -10,11 +10,14 @@ import * as Yup from "yup";
 import { Requests } from "@/services/requests";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { AxiosError } from "axios";
 
 export default function SignupPage() {
     const request = new Requests();
     const { signUp } = request;
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
     const formik = useFormik({
         initialValues: {
@@ -47,9 +50,20 @@ export default function SignupPage() {
                 console.log("Signup successful:", response);
                 toast.success("Signup successful! ");
                 router.push("/login");
-            } catch (error) {
-                console.error("Signup failed:", error);
-                toast.error("Signup failed. Please try again.");
+            } catch (error: unknown) {
+                const axiosError = error as AxiosError;
+                console.error("Login failed:", axiosError);
+                setIsLoading(false);
+                if (axiosError.response &&
+                    axiosError.response.data &&
+                    (axiosError.response.data as { message?: string }).message) {
+                    toast.error(
+                        (axiosError.response.data as { message?: string }).message ||
+                        "Login failed. Please try again."
+                    );
+                } else {
+                    toast.error("An unexpected error occurred. Please try again.");
+                }
             }
         },
     });

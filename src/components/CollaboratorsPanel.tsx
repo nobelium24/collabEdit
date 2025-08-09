@@ -8,6 +8,7 @@ import { Requests } from '@/services/requests'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DocumentAccess, Role } from '@/@types/types'
 import { toast } from 'sonner'
+import { AxiosError } from 'axios'
 
 const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     const [email, setEmail] = useState('')
@@ -30,8 +31,17 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
             const { collaborators } = await requests.fetchCollaborators(docId);
             setCollaborators(collaborators);
             setError(null);
-        } catch (err) {
-            setError('Failed to load collaborators');
+        }
+        catch (err: unknown) {
+            const error = err as AxiosError;
+            if (error.response && error.response.data && (error.response.data as { message?: string }).message) {
+                setError(
+                    (error.response.data as { message?: string }).message ||
+                    "Failed to load collaborators"
+                );
+            } else {
+                setError("Failed to load collaborators");
+            }
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -58,14 +68,19 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
             toast.success("Invitation sent successfully")
             setEmail('')
             await loadCollaborators()
-        } catch (err) {
-            if (err instanceof Error) {
-                toast.error(err.message);
+        } catch (error: unknown) {
+            const axiosError = error as AxiosError;
+            console.error("Failed to send invitation:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to send invitation"
+                );
             } else {
                 toast.error("Failed to send invitation");
             }
-            setError('Failed to send invitation')
-            console.error(err)
         } finally {
             setIsLoading(false)
         }
@@ -77,9 +92,19 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
         try {
             await requests.modifyAccess(accessId, newRole)
             await loadCollaborators()
-        } catch (err) {
-            setError('Failed to update role')
-            console.error(err)
+        } catch (err: unknown) {
+            const axiosError = err as AxiosError;
+            console.error("Failed to update role:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                setError(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to update role"
+                );
+            } else {
+                setError("Failed to update role");
+            }
         } finally {
             setIsLoading(false)
         }
@@ -92,8 +117,18 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
             await requests.revokeAccess(accessId)
             await loadCollaborators()
         } catch (err) {
-            setError('Failed to remove collaborator')
-            console.error(err)
+            const axiosError = err as AxiosError;
+            console.error("Failed to remove collaborator:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                setError(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to remove collaborator"
+                );
+            } else {
+                setError("Failed to remove collaborator");
+            }
         } finally {
             setIsLoading(false)
         }
@@ -106,8 +141,18 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
             await requests.transferOwnership(docId, userId)
             await loadCollaborators()
         } catch (err) {
-            setError('Failed to transfer ownership')
-            console.error(err)
+            const axiosError = err as AxiosError;
+            console.error("Failed to transfer ownership:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                setError(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to transfer ownership"
+                );
+            } else {
+                setError("Failed to transfer ownership");
+            }
         } finally {
             setIsLoading(false)
         }

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { DocumentActionPanelProps } from '@/@types/types';
+import { AxiosError } from 'axios';
 
 export const TransferOwnershipPanel = ({ docId }: DocumentActionPanelProps) => {
     const [recipientEmail, setRecipientEmail] = useState('');
@@ -28,7 +29,19 @@ export const TransferOwnershipPanel = ({ docId }: DocumentActionPanelProps) => {
             const response = await requests.transferOwnership(docId, recipientEmail);
             toast.success(response.message);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Transfer failed');
+            // toast.error(error instanceof Error ? error.message : 'Transfer failed');
+            const axiosError = error as AxiosError;
+            console.error("Failed to transfer ownership:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to transfer ownership"
+                );
+            } else {
+                toast.error("Failed to transfer ownership");
+            }
         } finally {
             setLoading(false);
         }

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { toast } from "sonner";
 import { Requests } from "@/services/requests";
+import { AxiosError } from "axios"
 
 interface CreateDocumentModalProps {
     open: boolean
@@ -31,8 +32,18 @@ export default function CreateDocumentModal({ open, onOpenChange, }: CreateDocum
             window.location.reload();
 
         } catch (error) {
-            console.error("Error creating document:", error);
-            toast.error("An error occurred while creating the document.");
+            const axiosError = error as AxiosError;
+            console.error("Error creating document:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to create document"
+                );
+            } else {
+                toast.error("Failed to create document");
+            }
         }
     }
 

@@ -10,6 +10,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Requests } from "@/services/requests";
+import { useState } from "react";
+import { AxiosError } from "axios";
 
 const validationSchema = Yup.object({
     email: Yup.string()
@@ -22,6 +24,7 @@ const validationSchema = Yup.object({
 
 export default function LoginPage() {
     const request = new Requests();
+    const [isLoading, setIsLoading] = useState(false);
 
     const { signIn } = request;
     const router = useRouter();
@@ -35,15 +38,27 @@ export default function LoginPage() {
         onSubmit: async (values) => {
             try {
                 const response = await signIn(values);
-
+                setIsLoading(true);
                 toast.success(`Welcome ${response.user.name}`);
+                setIsLoading(false);
                 const redirectPath = "/dashboard";
                 router.push(redirectPath, {
                     scroll: false
                 });
-            } catch (error) {
-                console.error("Login failed:", error);
-                toast.error("Login failed. Please try again.");
+            } catch (error: unknown) {
+                const axiosError = error as AxiosError;
+                console.error("Login failed:", axiosError);
+                setIsLoading(false);
+                if (axiosError.response &&
+                    axiosError.response.data &&
+                    (axiosError.response.data as { message?: string }).message) {
+                    toast.error(
+                        (axiosError.response.data as { message?: string }).message ||
+                        "Login failed. Please try again."
+                    );
+                } else {
+                    toast.error("An unexpected error occurred. Please try again.");
+                }
             }
         },
     });
@@ -95,7 +110,7 @@ export default function LoginPage() {
 
                         {/* Submit */}
                         <Button type="submit" className="w-full">
-                            Log In
+                            {isLoading ? "Loading..." : "Log In"}
                         </Button>
                     </form>
 

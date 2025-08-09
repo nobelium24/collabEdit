@@ -7,6 +7,7 @@ import { Requests } from '@/services/requests';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { AxiosError } from 'axios';
 
 export default function InvitePage() {
     const { token } = useParams();
@@ -41,10 +42,19 @@ export default function InvitePage() {
                     role: data.role,
                     email: data.email
                 });
-            } catch (error) {
-                console.error('Error verifying invite:', error);
-                toast.error('Invalid or expired invitation link');
-                router.push('/');
+            } catch (error: unknown) {
+                const axiosError = error as AxiosError;
+                console.error("Error verifying invite::", axiosError);
+                if (axiosError.response &&
+                    axiosError.response.data &&
+                    (axiosError.response.data as { message?: string }).message) {
+                    toast.error(
+                        (axiosError.response.data as { message?: string }).message ||
+                        "Invalid or expired invitation link"
+                    );
+                } else {
+                    toast.error("Invalid or expired invitation link");
+                }
             } finally {
                 setLoading(false);
             }

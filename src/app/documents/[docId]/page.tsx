@@ -15,6 +15,7 @@ import { Document, DocumentContent, DocumentJSON, DocumentMetadata, Metadata } f
 import { useDocumentWebSocket } from "@/hooks/useDocumentWebSocket";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 import EditorWithErrorBoundary from "@/components/EditorWithErrorBoundary";
+import { AxiosError } from "axios";
 
 //TODO: Implement fetch one document logic
 export default function DocumentEditorPage() {
@@ -82,9 +83,19 @@ export default function DocumentEditorPage() {
             if (metadata?.metadata) {
                 applyMetadataToEditor(metadata.metadata);
             }
-        } catch (error) {
-            console.error("Error fetching metadata:", error);
-            toast.error("Failed to load document formatting");
+        } catch (error: unknown) {
+            const axiosError = error as AxiosError;
+            console.error("Error loading document formatting:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to load document formatting"
+                );
+            } else {
+                toast.error("Failed to load document formatting");
+            }
         }
     }, [requests, safeDocId]);
 
@@ -168,12 +179,21 @@ export default function DocumentEditorPage() {
                 setMetadata(metadata);
                 applyMetadataToEditor(metadata.metadata);
             }
-        } catch (error) {
-            console.error("Error fetching document:", error);
-            toast.error("Failed to load document.");
-        } finally {
-            setLoading(false);
+        } catch (error: unknown) {
+            const axiosError = error as AxiosError;
+            console.error("Error loading document:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to load document"
+                );
+            } else {
+                toast.error("Failed to load document");
+            }
         }
+
     };
 
     useEffect(() => {

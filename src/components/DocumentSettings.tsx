@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { Requests } from '@/services/requests'
 import { Metadata, DocumentMetadata } from '@/@types/types'
 import { toast } from 'sonner'
+import { AxiosError } from 'axios'
 
 type Props = {
     docId: string
@@ -42,10 +43,19 @@ const DocumentSettings = ({ docId }: Props) => {
                 } catch (docError) {
                     console.warn('Could not fetch document visibility:', docError)
                 }
-            } catch (err) {
-                console.error('Metadata fetch error:', err)
-                setError(err instanceof Error ? err.message : 'Failed to load settings')
-                toast.error('Failed to load document settings')
+            } catch (err: unknown) {
+                const axiosError = err as AxiosError;
+                console.error("Error fetching document settings:", axiosError);
+                if (axiosError.response &&
+                    axiosError.response.data &&
+                    (axiosError.response.data as { message?: string }).message) {
+                    setError(
+                        (axiosError.response.data as { message?: string }).message ||
+                        "Failed to load document settings"
+                    );
+                } else {
+                    setError("Failed to load document settings");
+                }
             } finally {
                 setLoading(false)
             }

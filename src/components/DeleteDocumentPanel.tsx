@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DocumentActionPanelProps } from '@/@types/types';
+import { AxiosError } from 'axios';
 
 export const DeleteDocumentPanel = ({ docId }: DocumentActionPanelProps) => {
     const [confirmText, setConfirmText] = useState('');
@@ -28,7 +29,18 @@ export const DeleteDocumentPanel = ({ docId }: DocumentActionPanelProps) => {
             toast.success(response.message);
             router.push('/dashboard');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Deletion failed');
+            const axiosError = error as AxiosError;
+            console.error("Failed to delete document:", axiosError);
+            if (axiosError.response &&
+                axiosError.response.data &&
+                (axiosError.response.data as { message?: string }).message) {
+                toast.error(
+                    (axiosError.response.data as { message?: string }).message ||
+                    "Failed to delete document"
+                );
+            } else {
+                toast.error("Failed to delete document");
+            }
         } finally {
             setLoading(false);
         }
