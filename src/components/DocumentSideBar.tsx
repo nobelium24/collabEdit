@@ -23,4 +23,4 @@ const DocumentSidebar = ({ docId }: Props) => {
     );
 };
 
-export default DocumentSidebar;
+export default DocumentSidebar; 
