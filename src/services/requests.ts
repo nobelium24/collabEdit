@@ -429,7 +429,7 @@ export class Requests {
     }> {
         try {
             const response: AxiosResponse<{ metadata: DocumentMetadata }> = await axios.get(
-                `${ROOT_URL}/document-metadata/get-one?documentId=${documentId}`,
+                `${ROOT_URL}/document-metadata/get-one/${documentId}`,
                 { headers: this.getAuthHeaders() }
             );
             return response.data;

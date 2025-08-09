@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Requests } from '@/services/requests'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DocumentAccess, Role } from '@/@types/types'
+import { toast } from 'sonner'
 
 const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     const [email, setEmail] = useState('')
@@ -54,9 +55,15 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
                 email,
                 role
             })
+            toast.success("Invitation sent successfully")
             setEmail('')
             await loadCollaborators()
         } catch (err) {
+            if (err instanceof Error) {
+                toast.error(err.message);
+            } else {
+                toast.error("Failed to send invitation");
+            }
             setError('Failed to send invitation')
             console.error(err)
         } finally {

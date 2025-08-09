@@ -11,38 +11,23 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Requests } from "@/services/requests";
 import { toast } from "sonner";
-import { Document, DocumentContent, DocumentJSON } from "@/@types/types";
+import { Document, DocumentContent, DocumentJSON, DocumentMetadata, Metadata } from "@/@types/types";
 import { useDocumentWebSocket } from "@/hooks/useDocumentWebSocket";
+import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import EditorWithErrorBoundary from "@/components/EditorWithErrorBoundary";
 
 //TODO: Implement fetch one document logic
 export default function DocumentEditorPage() {
     const { docId } = useParams();
     const safeDocId = Array.isArray(docId) ? docId[0] ?? "" : docId ?? "";
     const [loading, setLoading] = useState(true);
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState<DocumentJSON>({
-        type: "doc",
-        content: [],
-    } as DocumentJSON
-    );
+    const [content, setContent] = useState<DocumentJSON | undefined>();
+    const [title, setTitle] = useState<string | undefined>();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const router = useRouter();
     const [requests, setRequests] = useState<Requests | null>(null);
     const [Document, setDocument] = useState<Document | null>(null);
-
-    const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
-        setDocument(updatedDoc);
-        setTitle(updatedDoc.title);
-        setContent(updatedDoc.content || {
-            type: "doc",
-            content: [],
-        } as DocumentJSON
-        );
-        editor?.commands.setContent(updatedDoc.content || "");
-        toast.info("Document updated in real-time");
-    }, []);
-
-    const { emitEdit } = useDocumentWebSocket(safeDocId, handleDocumentUpdate);
+    const [metadata, setMetadata] = useState<DocumentMetadata | null>(null);
 
     const editor = useEditor({
         extensions: [
@@ -51,7 +36,7 @@ export default function DocumentEditorPage() {
                 placeholder: "Start writing your document here...",
             }),
         ],
-        content,
+        content: content || null, // Handle undefined content
         editorProps: {
             attributes: {
                 class: "min-h-[600px] w-full outline-none prose focus:outline-none",
@@ -68,26 +53,120 @@ export default function DocumentEditorPage() {
         },
     });
 
+    const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
+        // Only update if the document ID matches
+        if (updatedDoc.id !== safeDocId) return;
+
+        setDocument(updatedDoc);
+        setTitle(updatedDoc.title);
+
+        const newContent = updatedDoc.content || { type: "doc", content: [] };
+        setContent(newContent);
+
+        // Debounce editor updates to prevent flickering
+        if (editor && JSON.stringify(editor.getJSON()) !== JSON.stringify(newContent)) {
+            editor.commands.setContent(newContent);
+        }
+
+        toast.info("Document updated in real-time");
+    }, [safeDocId, editor]);
+
+    const fetchDocumentMetadata = useCallback(async () => {
+        if (!requests || !safeDocId) return;
+
+        try {
+            const { metadata } = await requests.getDocumentMetadata(safeDocId);
+            setMetadata(metadata);
+
+            // Apply metadata to editor if it exists
+            if (metadata?.metadata) {
+                applyMetadataToEditor(metadata.metadata);
+            }
+        } catch (error) {
+            console.error("Error fetching metadata:", error);
+            toast.error("Failed to load document formatting");
+        }
+    }, [requests, safeDocId]);
+
+    useEffect(() => {
+        if (!safeDocId) {
+            toast.error("Invalid document ID.");
+            return router.push("/dashboard");
+        }
+
+        fetchDocumentMetadata();
+    }, [safeDocId, requests, fetchDocumentMetadata]);
+
+
+    const applyMetadataToEditor = (meta: Metadata) => {
+        if (!editor) return;
+
+        // Apply font styling if specified
+        if (meta.font) {
+            // You'll need to implement font handling logic
+            // This might involve adding a custom extension
+        }
+
+        // Apply other metadata
+        editor.setOptions({
+            editorProps: {
+                attributes: {
+                    style: `
+                    font-size: ${meta.fontSize}px;
+                    line-height: ${meta.lineSpacing};
+                    margin-top: ${meta.marginTop}px;
+                    margin-left: ${meta.marginLeft}px;
+                    margin-right: ${meta.marginRight}px;
+                    margin-bottom: ${meta.marginBottom}px;
+                `,
+                },
+            },
+        });
+    };
+
+    const { emitEdit } = useDocumentWebSocket(safeDocId, handleDocumentUpdate);
+
     useEffect(() => {
         const token = typeof window !== "undefined" ? localStorage.getItem('authToken') || '' : '';
         setRequests(new Requests(token));
     }, []);
 
+    useEffect(() => {
+        if (editor && content) {
+            const currentContent = editor.getJSON();
+            if (JSON.stringify(currentContent) !== JSON.stringify(content)) {
+                editor.commands.setContent(content);
+            }
+        }
+    }, [content, editor]);
+
     const fetchDocument = async () => {
         if (!requests) return;
+        setLoading(true);
         try {
-            const { document } = await requests.getSingleDocument(safeDocId);
-            if (document) {
-                setDocument(document);
-                setTitle(document.title);
-                setContent(document.content || {
-                    type: "doc",
-                    content: [],
-                } as DocumentJSON);
-                editor?.commands.setContent(document.content || "");
-            } else {
+            const [{ document }, { metadata }] = await Promise.all([
+                requests.getSingleDocument(safeDocId),
+                requests.getDocumentMetadata(safeDocId)
+            ]);
+
+            if (!document) {
                 toast.error("Document not found.");
-                router.push("/dashboard");
+                return router.push("/dashboard");
+            }
+
+            setDocument(document);
+            setTitle(document.title);
+
+            const docContent = document.content || { type: "doc", content: [] };
+            setContent(docContent);
+
+            if (editor) {
+                editor.commands.setContent(docContent);
+            }
+
+            if (metadata?.metadata) {
+                setMetadata(metadata);
+                applyMetadataToEditor(metadata.metadata);
             }
         } catch (error) {
             console.error("Error fetching document:", error);
@@ -118,8 +197,12 @@ export default function DocumentEditorPage() {
         }
     };
 
-    if (loading) {
-        return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    if (loading || !content) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+        );
     }
 
     return (
@@ -156,7 +239,7 @@ export default function DocumentEditorPage() {
 
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 h-full">
-                        <EditorContent editor={editor} />
+                        <EditorWithErrorBoundary editor={editor} />
                     </div>
                 </div>
 
