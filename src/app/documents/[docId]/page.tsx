@@ -135,10 +135,10 @@ export default function DocumentEditorPage() {
         });
     };
 
-    const { emitEdit } = useDocumentWebSocket(safeDocId, handleDocumentUpdate);
+    const { emitEdit, isConnected } = useDocumentWebSocket(safeDocId, handleDocumentUpdate);
 
     useEffect(() => {
-        const token = typeof window !== "undefined" ? localStorage.getItem('authToken') || '' : '';
+        const token = localStorage.getItem('authToken') || '';
         setRequests(new Requests(token));
     }, []);
 
@@ -151,8 +151,10 @@ export default function DocumentEditorPage() {
         }
     }, [content, editor]);
 
-    const fetchDocument = async () => {
-        if (!requests) return;
+
+    const fetchDocument = useCallback(async () => {
+        if (!requests || !safeDocId) return;
+
         setLoading(true);
         try {
             const [{ document }, { metadata }] = await Promise.all([
@@ -162,7 +164,8 @@ export default function DocumentEditorPage() {
 
             if (!document) {
                 toast.error("Document not found.");
-                return router.push("/dashboard");
+                router.push("/dashboard");
+                return;
             }
 
             setDocument(document);
@@ -171,10 +174,6 @@ export default function DocumentEditorPage() {
             const docContent = document.content || { type: "doc", content: [] };
             setContent(docContent);
 
-            if (editor) {
-                editor.commands.setContent(docContent);
-            }
-
             if (metadata?.metadata) {
                 setMetadata(metadata);
                 applyMetadataToEditor(metadata.metadata);
@@ -182,29 +181,33 @@ export default function DocumentEditorPage() {
         } catch (error: unknown) {
             const axiosError = error as AxiosError;
             console.error("Error loading document:", axiosError);
-            if (axiosError.response &&
-                axiosError.response.data &&
-                (axiosError.response.data as { message?: string }).message) {
-                toast.error(
-                    (axiosError.response.data as { message?: string }).message ||
-                    "Failed to load document"
-                );
+            if (axiosError.response?.status === 429) {
+                toast.error("Please wait before trying again");
             } else {
                 toast.error("Failed to load document");
             }
+        } finally {
+            setLoading(false);
         }
-
-    };
+    }, [requests, safeDocId, router]);
 
     useEffect(() => {
-        // if (safeDocId) {
-        //     fetchDocument();
-        // } else {
-        //     toast.error("Invalid document ID.");
-        //     router.push("/dashboard");
-        // }
-        fetchDocument();
-    }, [safeDocId, requests]);
+        let isMounted = true;
+
+        const loadData = async () => {
+            await fetchDocument();
+        };
+
+        if (safeDocId) {
+            loadData();
+        } else {
+            router.push("/dashboard");
+        }
+
+        return () => {
+            isMounted = false;
+        };
+    }, [safeDocId, requests, fetchDocument, router]);
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newTitle = e.target.value;
@@ -217,10 +220,15 @@ export default function DocumentEditorPage() {
         }
     };
 
-    if (loading || !content) {
+    if (loading || !isConnected || !content) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                    <p className="text-sm text-muted-foreground">
+                        {!isConnected ? "Connecting to real-time server..." : "Loading document..."}
+                    </p>
+                </div>
             </div>
         );
     }

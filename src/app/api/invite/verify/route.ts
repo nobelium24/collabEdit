@@ -1,4 +1,4 @@
-// app/api/invite/verify/route.ts
+
 import { NextResponse } from 'next/server';
 import { Requests } from '@/services/requests';
 
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
             isValid: true
         });
     } catch (error) {
+        console.log(error)
         return NextResponse.json(
             { error: 'Invalid or expired token' },
             { status: 400 }

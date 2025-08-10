@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 // For socket.io-client v2.x, use require or import as namespace
 import * as io from "socket.io-client";
 import { Document } from "@/@types/types";
@@ -11,6 +11,8 @@ export const useDocumentWebSocket = (
 ) => {
     // v2.x type
     const socketRef = useRef<SocketIOClient.Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+
 
     console.log(docId)
 
@@ -26,7 +28,7 @@ export const useDocumentWebSocket = (
                     }
                 }
             },
-            transports: ["websocket", "polling"], 
+            transports: ["websocket", "polling"],
             forceNew: true,
             reconnectionAttempts: 5,
             query: {
@@ -37,8 +39,10 @@ export const useDocumentWebSocket = (
         socketRef.current = socket;
 
         socket.on("connect", () => {
+            setIsConnected(true);
             console.log("Connected to WebSocket server");
             socket.emit("join", docId);
+            toast.success("Connected")
         });
 
         socket.on("document_updated", (updatedDoc: Document) => {
@@ -50,6 +54,7 @@ export const useDocumentWebSocket = (
         });
 
         socket.on("disconnect", () => {
+            setIsConnected(false);
             toast.warning("Disconnected from real-time server");
         });
 
@@ -67,5 +72,5 @@ export const useDocumentWebSocket = (
         }
     };
 
-    return { emitEdit };
+    return { emitEdit, isConnected };
 };

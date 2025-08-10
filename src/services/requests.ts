@@ -357,7 +357,7 @@ export class Requests {
                 }
             );
 
-            // Handle both cases (existing user and new user)
+            console.log(response.data)
             const result: {
                 message: string;
                 accessToken?: string;
@@ -366,7 +366,7 @@ export class Requests {
             } = response.data;
 
             if (result.accessToken && result.refreshToken) {
-                // Existing user case - has tokens
+                
                 return {
                     message: result.message,
                     accessToken: result.accessToken,

@@ -12,7 +12,7 @@ type Props = {
 
 const DocumentSidebar = ({ docId }: Props) => {
     return (
-        <ScrollArea className="h-full w-100 border-l border-border bg-muted">
+        <ScrollArea className="h-full w-full border-l border-border bg-muted">
             <div className="flex flex-col gap-6 p-4">
                 <DocumentSettings docId={docId} />
                 <CollaboratorsPanel docId={docId} />

@@ -49,8 +49,8 @@ export type DocumentAccess = {
     role: Role;
     createdAt: Date;
     updatedAt: Date;
-    document?: Document;
-    user?: User;
+    Document?: Document;
+    User?: User;
 };
 
 export type DocumentMedia = {

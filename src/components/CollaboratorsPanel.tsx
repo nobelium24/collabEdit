@@ -15,6 +15,8 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     const [role, setRole] = useState<Role>('read') // Default to read-only
     const [collaborators, setCollaborators] = useState<DocumentAccess[]>([])
     const [isLoading, setIsLoading] = useState(false)
+    const [isInviteLoading, setIsInviteLoading] = useState(false)
+
     const [error, setError] = useState<string | null>(null)
 
     const [requests, setRequests] = useState<Requests | null>(null);
@@ -57,7 +59,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
     const handleInvite = async () => {
         if (!email) return
 
-        setIsLoading(true)
+        setIsInviteLoading(true)
         if (!requests) return;
         try {
             await requests.inviteCollaborator({
@@ -68,6 +70,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
             toast.success("Invitation sent successfully")
             setEmail('')
             await loadCollaborators()
+
         } catch (error: unknown) {
             const axiosError = error as AxiosError;
             console.error("Failed to send invitation:", axiosError);
@@ -82,7 +85,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
                 toast.error("Failed to send invitation");
             }
         } finally {
-            setIsLoading(false)
+            setIsInviteLoading(false)
         }
     }
 
@@ -158,6 +161,7 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
         }
     }
 
+    // console.log("Raw collaborators data:", JSON.stringify(collaborators, null, 2))
     return (
         <section className="space-y-4">
             <h2 className="font-semibold text-lg">Collaborators</h2>
@@ -197,9 +201,13 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
 
                 <Button
                     onClick={handleInvite}
-                    disabled={!email || isLoading}
+                    disabled={!email || isInviteLoading}
                 >
-                    Invite
+                    {isInviteLoading ? (
+                        "Loading..."
+                    ) : (
+                        'Invite'
+                    )}
                 </Button>
             </div>
 
@@ -215,10 +223,10 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
                         <div key={collab.id} className="flex items-center gap-3 p-2 border rounded">
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">
-                                    {collab.user?.email || 'Unknown user'}
+                                    {collab.User?.email || 'UnknownUuser'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {collab.user?.firstName} {collab.user?.lastName}
+                                    {collab.User?.firstName} {collab.User?.lastName}
                                 </p>
                             </div>
 
@@ -254,8 +262,8 @@ const CollaboratorsPanel = ({ docId }: { docId: string }) => {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => collab.user && handleTransfer(collab.user.id)}
-                                        disabled={isLoading || !collab.user}
+                                        onClick={() => collab.User && handleTransfer(collab.User.id)}
+                                        disabled={isLoading || !collab.User}
                                     >
                                         Transfer
                                     </Button>
